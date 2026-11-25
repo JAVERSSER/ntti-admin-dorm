@@ -13,10 +13,15 @@ const MESSAGES: Record<SubmissionStatus, string> = {
   pending: "Payment moved back to pending.",
 };
 
-export async function reviewSubmission(id: string, status: SubmissionStatus, note: string): Promise<ActionResult> {
+export async function reviewSubmission(
+  id: string,
+  status: SubmissionStatus,
+  note: string,
+  bankReference: string,
+): Promise<ActionResult> {
   return runAction(async () => {
     const admin = await assertAdmin();
-    const input = reviewSchema.parse({ id, status, admin_note: note });
+    const input = reviewSchema.parse({ id, status, admin_note: note, bank_reference: bankReference });
     const supabase = await createClient();
     const pending = input.status === "pending";
     const { error } = await supabase
@@ -24,6 +29,7 @@ export async function reviewSubmission(id: string, status: SubmissionStatus, not
       .update({
         status: input.status,
         admin_note: input.admin_note,
+        bank_reference: input.bank_reference,
         reviewed_by: pending ? null : admin.id,
         reviewed_at: pending ? null : new Date().toISOString(),
       })

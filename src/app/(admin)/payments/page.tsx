@@ -59,7 +59,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
     summary = summary.gte("for_month", since);
   }
   if (q) {
-    const search = `student_name.ilike.%${q}%,reference.ilike.%${q}%`;
+    const search = `student_name.ilike.%${q}%,reference.ilike.%${q}%,bank_reference.ilike.%${q}%`;
     list = list.or(search);
     summary = summary.or(search);
   }
@@ -106,7 +106,7 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
 
       <Card>
         <FilterBar
-          searchPlaceholder="Search name or reference…"
+          searchPlaceholder="Search name, reference or bank ref…"
           filters={[{ name: "room", label: "Room", options: (roomsRes.data ?? []).map((r) => ({ value: r.name, label: r.name })) }]}
         >
           <MonthSelect value={month} options={months} />
