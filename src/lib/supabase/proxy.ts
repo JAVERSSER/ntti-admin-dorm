@@ -6,6 +6,9 @@ const PUBLIC_PATHS = ["/login"];
 
 /** Refreshes the Supabase session cookie and gates admin routes. */
 export async function updateSession(request: NextRequest) {
+  // Scheduled jobs carry no login; the route checks CRON_SECRET itself.
+  if (request.nextUrl.pathname.startsWith("/api/cron/")) return NextResponse.next({ request });
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

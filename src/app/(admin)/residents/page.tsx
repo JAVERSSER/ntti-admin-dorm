@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CheckCircle2, Clock, UserX, Users } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { currentMonth, formatDateTime, formatNumber, DEGREES, monthOptions, monthRange } from "@/lib/format";
+import { currentMonth, formatDateTime, formatNumber, DEGREES, keptMonths, monthRange } from "@/lib/format";
 import { matchPayments, nameKey, type PayState, type SubmissionLite } from "@/lib/match";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
@@ -46,10 +46,14 @@ function one(v: string | string[] | undefined): string {
 
 export default async function ResidentsPage({ searchParams }: PageProps<"/residents">) {
   const sp = await searchParams;
-  const monthParam = monthRange(one(sp.month)) ? one(sp.month) : currentMonth();
+  // Payments older than last month are deleted automatically, so only these two months are offered.
+  const months = keptMonths();
+  const monthParam = months.some((m) => m.value === one(sp.month)) ? one(sp.month) : currentMonth();
   const range = monthRange(monthParam)!;
   const pay = PAY_FILTERS.some((s) => s.value === one(sp.pay)) ? (one(sp.pay) as PayFilter) : "";
   const room = one(sp.room);
+  const school = one(sp.school);
+  const grade = one(sp.grade);
   const showMoved = one(sp.show) === "moved";
   const q = nameKey(one(sp.q));
 
@@ -75,6 +79,8 @@ export default async function ResidentsPage({ searchParams }: PageProps<"/reside
 
   const rows = (showMoved ? all.filter((r) => !r.is_active) : active).filter((r) => {
     if (room && r.room !== room) return false;
+    if (school && r.institution !== school) return false;
+    if (grade && r.grade !== grade) return false;
     if (q && !nameKey(r.full_name).includes(q)) return false;
     if (pay && !showMoved && !payMatches(result.get(r.id)?.state, pay)) return false;
     return true;
@@ -83,18 +89,7 @@ export default async function ResidentsPage({ searchParams }: PageProps<"/reside
   const roomNames = [...new Set([...(roomsRes.data ?? []).map((r) => r.name as string), ...all.map((r) => r.room)])].sort();
   const schools = (schoolsRes.data ?? []).map((s) => s.code as string);
   const degrees = DEGREES;
-  const months = monthOptions(24);
-  if (!months.some((m) => m.value === monthParam)) months.push({ value: monthParam, label: range.label });
   const error = residentsRes.error ?? subsRes.error;
-
-  // Stat cards act as quick filters: keep month/room/search, set the payment filter, leave the moved-out list.
-  const cardHref = (p: PayFilter | "") => {
-    const next = new URLSearchParams();
-    for (const [k, v] of Object.entries(sp)) if (typeof v === "string" && v && !["pay", "show", "page"].includes(k)) next.set(k, v);
-    if (p) next.set("pay", p);
-    return next.size ? `/residents?${next}` : "/residents";
-  };
-  const cardSelected = (p: PayFilter | "") => !showMoved && pay === p;
 
   return (
     <>
@@ -112,10 +107,10 @@ export default async function ResidentsPage({ searchParams }: PageProps<"/reside
       {error && <ErrorNotice message={error.message} />}
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Residents" value={formatNumber(active.length)} icon={<Users className="h-5 w-5" />} accent="blue" hint={range.label} href={cardHref("")} selected={cardSelected("")} />
-        <StatCard label="Paid" value={formatNumber(counts.paid)} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" href={cardHref("paid")} selected={cardSelected("paid")} />
-        <StatCard label="Waiting review" value={formatNumber(counts.pending)} icon={<Clock className="h-5 w-5" />} accent="amber" href={cardHref("pending")} selected={cardSelected("pending")} />
-        <StatCard label="Not paid" value={formatNumber(counts.unpaid + counts.rejected)} icon={<UserX className="h-5 w-5" />} accent="red" hint={counts.rejected ? `${counts.rejected} rejected` : undefined} href={cardHref("notpaid")} selected={cardSelected("notpaid")} />
+        <StatCard label="Residents" value={formatNumber(active.length)} icon={<Users className="h-5 w-5" />} accent="blue" hint={range.label} />
+        <StatCard label="Paid" value={formatNumber(counts.paid)} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" />
+        <StatCard label="Waiting review" value={formatNumber(counts.pending)} icon={<Clock className="h-5 w-5" />} accent="amber" />
+        <StatCard label="Not paid" value={formatNumber(counts.unpaid + counts.rejected)} icon={<UserX className="h-5 w-5" />} accent="red" hint={counts.rejected ? `${counts.rejected} rejected` : undefined} />
       </div>
 
       {unmatched.length > 0 && (
@@ -148,6 +143,8 @@ export default async function ResidentsPage({ searchParams }: PageProps<"/reside
           filters={[
             { name: "pay", label: "Payment", options: PAY_FILTERS.map((s) => ({ value: s.value, label: s.label })) },
             { name: "room", label: "Room", options: roomNames.map((r) => ({ value: r, label: r })) },
+            { name: "school", label: "School", options: schools.map((s) => ({ value: s, label: s })) },
+            { name: "grade", label: "Grade", options: grades.map((g) => ({ value: g, label: g })) },
             { name: "show", label: "List", options: [{ value: "moved", label: "Moved out" }] },
           ]}
         >

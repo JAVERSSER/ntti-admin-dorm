@@ -25,10 +25,13 @@ drop table if exists public.invoices               cascade;
 drop table if exists public.payment_periods        cascade;
 drop table if exists public.resident_verifications cascade;
 drop table if exists public.residents              cascade;  -- replaced by dorm_residents
+drop table if exists public.portal_otp_challenges  cascade;  -- old resident OTP login, unused
 drop sequence if exists public.resident_code_seq;
 drop sequence if exists public.transaction_code_seq;
 
 -- 2. Old functions (invoices, ABA KHQR payments, dashboard reports).
+drop function if exists public.portal_begin_payment;   -- old resident portal (ABA KHQR)
+drop function if exists public.portal_close_payment;
 drop function if exists public.guard_payment_period();
 drop function if exists public.protect_invoice_amount();
 drop function if exists public._reopen_invoice_if_idle(uuid);

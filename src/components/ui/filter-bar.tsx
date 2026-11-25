@@ -88,7 +88,7 @@ export function FilterBar({
       title={f.label}
       value={params.get(f.name) ?? ""}
       onChange={(e) => update({ [f.name]: e.target.value })}
-      className={cn("w-full min-w-0 truncate sm:w-44", params.get(f.name) && "border-blue-300 bg-blue-50/60 font-medium text-blue-800")}
+      className={cn("w-full min-w-0 truncate", params.get(f.name) && "border-blue-300 bg-blue-50/60 font-medium text-blue-800")}
     >
       <option value="">{f.label}: All</option>
       {f.options.map((o) => (
@@ -97,11 +97,14 @@ export function FilterBar({
     </Select>
   );
 
+  const hasControls = Boolean(children) || filters.length > 0 || moreFilters.length > 0;
+
+  // Fixed layout so nothing jumps: search + (reserved) spinner/Clear on top, filters in an even grid below.
   return (
-    <div className="border-b border-slate-100 p-4">
-      <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-        {searchPlaceholder && (
-          <div className="relative lg:w-72 lg:shrink-0">
+    <div className="space-y-3 border-b border-slate-100 p-4">
+      <div className="flex items-center gap-2">
+        {searchPlaceholder ? (
+          <div className="relative min-w-0 flex-1 lg:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <Input
               type="search"
@@ -112,12 +115,28 @@ export function FilterBar({
               aria-label="Search"
             />
           </div>
+        ) : (
+          <div className="flex-1" />
         )}
-        <div className="flex flex-1 flex-wrap items-center gap-2">
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-            {children}
-            {filters.map(renderSelect)}
-          </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <Loader2 className={cn("h-4 w-4 animate-spin text-slate-400", !pending && "invisible")} aria-hidden={!pending} />
+          <button
+            type="button"
+            onClick={clearAll}
+            disabled={!active}
+            className={cn(
+              "inline-flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800",
+              !active && "invisible",
+            )}
+          >
+            <X className="h-3.5 w-3.5" /> Clear
+          </button>
+        </div>
+      </div>
+      {hasControls && (
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
+          {children}
+          {filters.map(renderSelect)}
           {moreFilters.length > 0 && (
             <button
               ref={moreBtnRef}
@@ -125,7 +144,7 @@ export function FilterBar({
               onClick={() => setShowMore((v) => !v)}
               aria-expanded={showMore}
               className={cn(
-                "inline-flex h-10 items-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition",
+                "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border px-3 text-sm font-medium transition",
                 showMore || moreActive ? "border-blue-300 bg-blue-50/60 text-blue-800" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50",
               )}
             >
@@ -134,22 +153,10 @@ export function FilterBar({
               {moreActive > 0 && <span className="rounded-full bg-blue-600 px-1.5 text-xs text-white">{moreActive}</span>}
             </button>
           )}
-          <div className="ml-auto flex items-center gap-2">
-            {pending && <Loader2 className="h-4 w-4 animate-spin text-slate-400" aria-label="Loading" />}
-            {active && (
-              <button
-                type="button"
-                onClick={clearAll}
-                className="inline-flex h-10 items-center gap-1 rounded-lg px-3 text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-              >
-                <X className="h-3.5 w-3.5" /> Clear
-              </button>
-            )}
-          </div>
         </div>
-      </div>
+      )}
       {showMore && moreFilters.length > 0 && (
-        <div ref={morePanelRef} className="mt-3 grid grid-cols-1 gap-2 border-t border-slate-100 pt-3 sm:flex sm:flex-wrap">
+        <div ref={morePanelRef} className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3 sm:grid-cols-[repeat(auto-fill,minmax(11rem,1fr))]">
           {moreFilters.map(renderSelect)}
         </div>
       )}

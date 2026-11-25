@@ -29,7 +29,7 @@ export function MonthSelect({
         sp.delete("page");
         startTransition(() => router.replace(`${pathname}?${sp}`, { scroll: false }));
       }}
-      className="w-full min-w-0 font-medium sm:w-44"
+      className="w-full min-w-0 font-medium"
     >
       {options.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>

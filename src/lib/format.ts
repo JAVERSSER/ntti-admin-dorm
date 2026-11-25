@@ -69,6 +69,14 @@ export function monthOptions(count = 24): { value: string; label: string }[] {
   });
 }
 
+/**
+ * Months whose payments are kept: this month and last month (newest first).
+ * Older payments and their screenshots are deleted automatically (lib/cleanup.ts).
+ */
+export function keptMonths(): { value: string; label: string }[] {
+  return monthOptions(2);
+}
+
 /** "2026-12-01" (a payment's for_month) → "December 2026". */
 export function formatMonth(value: string | null | undefined): string {
   const m = /^(\d{4})-(\d{2})/.exec(value ?? "");
