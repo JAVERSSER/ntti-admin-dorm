@@ -17,12 +17,15 @@ export function FilterBar({
   searchPlaceholder,
   filters = [],
   moreFilters = [],
+  local = false,
   children,
 }: {
   searchPlaceholder?: string;
   filters?: FilterDef[];
   /** Less-used filters, shown after pressing "More filters". */
   moreFilters?: FilterDef[];
+  /** Filter in the browser: only the address bar changes, the server is not asked for a new page. */
+  local?: boolean;
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -39,7 +42,9 @@ export function FilterBar({
       else sp.delete(k);
     }
     sp.delete("page");
-    startTransition(() => router.replace(`${pathname}${sp.size ? `?${sp}` : ""}`, { scroll: false }));
+    const url = `${pathname}${sp.size ? `?${sp}` : ""}`;
+    if (local) window.history.replaceState(null, "", url);
+    else startTransition(() => router.replace(url, { scroll: false }));
   }
 
   useEffect(() => {
@@ -47,7 +52,7 @@ export function FilterBar({
       first.current = false;
       return;
     }
-    const t = setTimeout(() => update({ q: q.trim() }), 350);
+    const t = setTimeout(() => update({ q: q.trim() }), local ? 120 : 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
