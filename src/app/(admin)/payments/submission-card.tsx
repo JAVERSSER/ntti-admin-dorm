@@ -63,8 +63,17 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
         footer={
           <>
             {s.status !== "pending" && (
-              <Button variant="ghost" onClick={() => review("pending")} loading={pending && target === "pending"} disabled={pending}>
-                <RotateCcw className="h-4 w-4" /> Back to pending
+              <Button
+                variant="ghost"
+                onClick={() => review("pending")}
+                loading={pending && target === "pending"}
+                disabled={pending}
+                aria-label="Back to pending"
+                title="Back to pending"
+              >
+                {!(pending && target === "pending") && <RotateCcw className="h-4 w-4" />}
+                {/* Phones show the icon only; wider screens show the words too. */}
+                <span className="hidden sm:inline">Back to pending</span>
               </Button>
             )}
             <Button variant="danger" onClick={() => review("rejected")} loading={pending && target === "rejected"} disabled={pending}>
