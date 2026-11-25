@@ -33,13 +33,19 @@ export function AppShell({
 
   const sidebar = (
     <nav className="flex h-full flex-col">
-      <div className="flex h-16 items-center gap-3 border-b border-slate-200 px-5">
+      <Link
+        href="/payments"
+        prefetch
+        onClick={() => setOpen(false)}
+        title="Go to Payments"
+        className="flex h-16 items-center gap-3 border-b border-slate-200 px-5 transition-colors hover:bg-slate-50"
+      >
         <Image src="/logo.png" alt="" width={34} height={34} className="rounded-full" priority />
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-slate-900">{dormitoryName}</p>
           <p className="truncate text-xs text-slate-500">Admin</p>
         </div>
-      </div>
+      </Link>
       <ul className="flex-1 space-y-0.5 overflow-y-auto p-3">
         {NAV.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
