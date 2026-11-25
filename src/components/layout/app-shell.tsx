@@ -2,12 +2,12 @@
 
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
-import Link, { useLinkStatus } from "next/link";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Loader2, LogOut, Menu, X, type LucideIcon } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { NAV } from "./nav";
 import { cn } from "@/components/ui/cn";
-import { signOut } from "@/app/login/actions";
+import { SignOutButton } from "./sign-out-button";
 
 export function AppShell({
   children,
@@ -47,13 +47,15 @@ export function AppShell({
             <li key={href}>
               <Link
                 href={href}
+                // Load every menu page in the background as soon as the app opens.
+                prefetch
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
-                <NavIcon icon={Icon} />
+                <Icon className="h-4 w-4 shrink-0" />
                 {label}
               </Link>
             </li>
@@ -108,26 +110,11 @@ export function AppShell({
                 {initials}
               </span>
             </Link>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-800"
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </form>
+            <SignOutButton />
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">{children}</main>
       </div>
     </div>
   );
-}
-
-/** The link's icon, swapped for a spinner the moment the link is clicked and while its page loads. */
-function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
-  const { pending } = useLinkStatus();
-  return pending ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600" aria-label="Loading" /> : <Icon className="h-4 w-4 shrink-0" />;
 }

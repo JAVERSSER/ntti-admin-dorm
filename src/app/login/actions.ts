@@ -1,6 +1,9 @@
 "use server";
 
+import { cookies } from "next/headers";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
+import { publicEnv } from "@/lib/env";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -59,8 +62,28 @@ export async function signIn(_prev: LoginState, formData: FormData): Promise<Log
   redirect(next && next.startsWith("/") && !next.startsWith("//") ? next : "/payments");
 }
 
+/**
+ * Fast sign-out: the login cookies are removed straight away and the admin goes to
+ * /login at once; Supabase is told to end the session in the background (after the
+ * response), so nobody waits for that network call.
+ */
 export async function signOut() {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  const { data } = await supabase.auth.getSession(); // reads the cookie, no network call
+  const token = data.session?.access_token;
+
+  const cookieStore = await cookies();
+  for (const c of cookieStore.getAll()) {
+    if (c.name.startsWith("sb-") && c.name.includes("-auth-token")) cookieStore.delete(c.name);
+  }
+
+  if (token) {
+    after(() =>
+      fetch(`${publicEnv.supabaseUrl()}/auth/v1/logout?scope=local`, {
+        method: "POST",
+        headers: { apikey: publicEnv.supabasePublishableKey(), Authorization: `Bearer ${token}` },
+      }).catch(() => {}),
+    );
+  }
   redirect("/login");
 }

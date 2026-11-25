@@ -8,11 +8,9 @@ const nextConfig: NextConfig = {
   experimental: {
     // Payment QR uploads go through a Server Action (max 5 MB + form overhead).
     serverActions: { bodySizeLimit: "6mb" },
-    // Keep visited pages in the browser for 30 s so switching back is instant.
+    // Keep pages in the browser for 5 minutes, so switching between them never reloads.
     // Saving anything (approve, edit, delete…) clears this right away; the Refresh button does too.
-    staleTimes: { dynamic: 30 },
-    // Load a page in the background while the mouse is over its link, so the click opens it at once.
-    dynamicOnHover: true,
+    staleTimes: { dynamic: 300, static: 300 },
   },
   turbopack: {
     rules: {

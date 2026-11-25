@@ -90,8 +90,8 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
               <p className="text-sm text-slate-500">Image not available.</p>
             )}
           </div>
-          <div className="space-y-4">
-            <dl className="divide-y divide-slate-100 text-sm">
+          <div className="space-y-5">
+            <dl className="divide-y divide-slate-100 border-b border-slate-100 text-sm">
               {[
                 ["Status", <StatusBadge key="s" status={s.status} />],
                 ["Paying for", forMonth],
@@ -99,16 +99,16 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
                 ["Room", s.room],
                 ["Grade", s.grade],
                 ["Student at", s.institution],
-                ["Submitted", submittedAt],
-                ["Reviewed", reviewedAt ?? "—"],
+                ["Submitted", <span key="t" className="whitespace-nowrap">{submittedAt}</span>],
+                ["Reviewed", <span key="r" className="whitespace-nowrap">{reviewedAt ?? "—"}</span>],
               ].map(([label, value]) => (
-                <div key={label as string} className="flex justify-between gap-4 py-2">
-                  <dt className="text-slate-500">{label}</dt>
-                  <dd className="text-right font-medium text-slate-900">{value}</dd>
+                <div key={label as string} className="flex items-center justify-between gap-4 py-2.5">
+                  <dt className="shrink-0 whitespace-nowrap text-slate-500">{label}</dt>
+                  <dd className="min-w-0 text-right font-medium text-slate-900">{value}</dd>
                 </div>
               ))}
             </dl>
-            <Field label="Note (optional)" htmlFor={`note-${s.id}`} hint="e.g. amount received, or why it was rejected">
+            <Field className="rounded-lg bg-slate-50 p-3" label="Note (optional)" htmlFor={`note-${s.id}`} hint="e.g. amount received, or why it was rejected">
               <Textarea id={`note-${s.id}`} rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
             </Field>
           </div>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
@@ -11,6 +11,13 @@ export const metadata: Metadata = {
   description: "Dormitory payment management for administrators.",
   robots: { index: false, follow: false },
   icons: { icon: "/logo.png" },
+};
+
+// Same phone setup as the user app: fit the screen width, browser bar in the app colour.
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
