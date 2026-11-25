@@ -2,9 +2,9 @@
 
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut, Menu, X } from "lucide-react";
+import { Loader2, LogOut, Menu, X, type LucideIcon } from "lucide-react";
 import { NAV } from "./nav";
 import { cn } from "@/components/ui/cn";
 import { signOut } from "@/app/login/actions";
@@ -53,7 +53,7 @@ export function AppShell({
                   active ? "bg-blue-50 text-blue-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
-                <Icon className="h-4 w-4 shrink-0" />
+                <NavIcon icon={Icon} />
                 {label}
               </Link>
             </li>
@@ -124,4 +124,10 @@ export function AppShell({
       </div>
     </div>
   );
+}
+
+/** The link's icon, swapped for a spinner the moment the link is clicked and while its page loads. */
+function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
+  const { pending } = useLinkStatus();
+  return pending ? <Loader2 className="h-4 w-4 shrink-0 animate-spin text-blue-600" aria-label="Loading" /> : <Icon className="h-4 w-4 shrink-0" />;
 }

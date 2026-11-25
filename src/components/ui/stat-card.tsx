@@ -19,6 +19,7 @@ export function StatCard({
   accent = "blue",
   hint,
   href,
+  onClick,
   selected,
 }: {
   label: string;
@@ -28,6 +29,8 @@ export function StatCard({
   hint?: ReactNode;
   /** Makes the card a link (e.g. a filter tab). */
   href?: string;
+  /** Makes the card a button that filters in place (no page load). */
+  onClick?: () => void;
   selected?: boolean;
 }) {
   const body = (
@@ -41,18 +44,21 @@ export function StatCard({
       </div>
   );
   const box = "block rounded-xl border bg-white p-4 shadow-sm";
+  const interactive = cn(
+    box,
+    "relative w-full text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+    selected ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200 hover:border-blue-300 hover:shadow-md",
+  );
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} aria-pressed={selected} className={interactive}>
+        {body}
+      </button>
+    );
+  }
   if (!href) return <div className={cn(box, "border-slate-200")}>{body}</div>;
   return (
-    <Link
-      href={href}
-      scroll={false}
-      aria-current={selected ? "page" : undefined}
-      className={cn(
-        box,
-        "relative transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
-        selected ? "border-blue-500 ring-1 ring-blue-500" : "border-slate-200 hover:border-blue-300 hover:shadow-md",
-      )}
-    >
+    <Link href={href} scroll={false} aria-current={selected ? "page" : undefined} className={interactive}>
       {body}
       <LinkPending />
     </Link>

@@ -38,10 +38,6 @@ export const reviewSchema = z.object({
   id: z.uuid(),
   status: z.enum(["pending", "approved", "rejected"]),
   admin_note: z.preprocess(emptyToNull, z.string().trim().max(500).nullable()),
-  bank_reference: z.preprocess(
-    (v) => (typeof v === "string" ? v.replace(/\s+/g, "").toUpperCase() : v),
-    z.preprocess(emptyToNull, z.string().max(64, "Bank reference is too long").nullable()),
-  ),
 });
 
 const usernameField = z.preprocess(

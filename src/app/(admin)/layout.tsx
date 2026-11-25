@@ -3,9 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { AppShell } from "@/components/layout/app-shell";
 
 export default async function AdminLayout({ children }: LayoutProps<"/">) {
-  const admin = await requireAdmin();
   const supabase = await createClient();
-  const { data: settings } = await supabase.from("app_settings").select("dormitory_name").eq("id", 1).maybeSingle();
+  // Both at once: the admin check and the dormitory name don't depend on each other.
+  const [admin, { data: settings }] = await Promise.all([
+    requireAdmin(),
+    supabase.from("app_settings").select("dormitory_name").eq("id", 1).maybeSingle(),
+  ]);
 
   return (
     <AppShell

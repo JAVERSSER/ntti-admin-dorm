@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Check, ExternalLink, ImageOff, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
-import { Field, Input, Textarea } from "@/components/ui/field";
+import { Field, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useAction } from "@/components/ui/use-action";
 import { reviewSubmission } from "./actions";
@@ -21,13 +21,12 @@ type Props = {
 export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt, reviewedAt }: Props) {
   const [open, setOpen] = useState(false);
   const [note, setNote] = useState(s.admin_note ?? "");
-  const [bankRef, setBankRef] = useState(s.bank_reference ?? "");
   const [target, setTarget] = useState<SubmissionStatus | null>(null);
   const { run, pending } = useAction(reviewSubmission, { onSuccess: () => setOpen(false) });
 
   function review(status: SubmissionStatus) {
     setTarget(status);
-    run(s.id, status, note, bankRef);
+    run(s.id, status, note);
   }
 
   return (
@@ -51,7 +50,6 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
           <p className="truncate text-xs text-slate-600">Room {s.room} · {s.grade}</p>
           <p className="truncate text-xs text-slate-500">{s.institution}</p>
           <p className="truncate pt-1 text-xs font-medium text-blue-700">For {forMonth}</p>
-          {s.bank_reference && <p className="truncate font-mono text-[11px] text-slate-600">Bank ref {s.bank_reference}</p>}
           <p className="pt-1 text-[11px] text-slate-400">{submittedAt}</p>
         </div>
       </button>
@@ -103,7 +101,6 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
                 ["Student at", s.institution],
                 ["Submitted", submittedAt],
                 ["Reviewed", reviewedAt ?? "—"],
-                ["Bank reference", s.bank_reference ? <span key="b" className="font-mono">{s.bank_reference}</span> : "—"],
               ].map(([label, value]) => (
                 <div key={label as string} className="flex justify-between gap-4 py-2">
                   <dt className="text-slate-500">{label}</dt>
@@ -111,16 +108,6 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
                 </div>
               ))}
             </dl>
-            <Field label="Bank reference" htmlFor={`bankref-${s.id}`} hint="Transaction ID from the ABA screenshot (Trx. ID / Reference #)">
-              <Input
-                id={`bankref-${s.id}`}
-                maxLength={64}
-                autoComplete="off"
-                className="font-mono uppercase"
-                value={bankRef}
-                onChange={(e) => setBankRef(e.target.value)}
-              />
-            </Field>
             <Field label="Note (optional)" htmlFor={`note-${s.id}`} hint="e.g. amount received, or why it was rejected">
               <Textarea id={`note-${s.id}`} rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
             </Field>

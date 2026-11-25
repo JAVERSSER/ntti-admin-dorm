@@ -13,9 +13,9 @@ import type { Admin, AppSettings } from "@/lib/types";
 
 
 export default async function SettingsPage() {
-  const me = await requireAdmin();
   const supabase = await createClient();
-  const [{ data: settings, error }, { data: admins }] = await Promise.all([
+  const [me, { data: settings, error }, { data: admins }] = await Promise.all([
+    requireAdmin(),
     supabase.from("app_settings").select("*").eq("id", 1).maybeSingle(),
     supabase.from("admins").select("*").order("created_at"),
   ]);

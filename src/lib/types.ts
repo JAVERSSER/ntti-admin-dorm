@@ -54,8 +54,6 @@ export interface PaymentSubmission {
   for_month: string;
   status: SubmissionStatus;
   admin_note: string | null;
-  /** Bank transaction ID from the payment screenshot, entered by the admin. */
-  bank_reference: string | null;
   reviewed_by: string | null;
   reviewed_at: string | null;
   created_at: string;

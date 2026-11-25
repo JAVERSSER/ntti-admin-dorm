@@ -14,8 +14,6 @@ export function dbErrorMessage(error: { code?: string; message?: string; details
       if (error.message?.includes("rooms_name_key")) return "A room with this name already exists.";
       if (error.message?.includes("admins_username_key")) return "This username is already taken.";
       if (error.message?.includes("admins_email_key")) return "This email is already used by another administrator.";
-      if (error.message?.includes("payment_submissions_bank_reference_key"))
-        return "This bank reference is already used by another payment. Check for a reused screenshot.";
       if (error.message?.includes("grades_name_key")) return "A grade with this name already exists.";
       return error.message ?? "Duplicate record.";
     case "23503":
