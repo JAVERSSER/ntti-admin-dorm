@@ -69,12 +69,15 @@ export function monthOptions(count = 24): { value: string; label: string }[] {
   });
 }
 
+/** How many months of payments (this month included) are kept before auto-deletion. */
+export const KEPT_MONTHS = 3;
+
 /**
- * Months whose payments are kept: this month and last month (newest first).
+ * Months whose payments are kept: this month and the 2 months before it (newest first).
  * Older payments and their screenshots are deleted automatically (lib/cleanup.ts).
  */
 export function keptMonths(): { value: string; label: string }[] {
-  return monthOptions(2);
+  return monthOptions(KEPT_MONTHS);
 }
 
 /** "2026-12-01" (a payment's for_month) → "December 2026". */

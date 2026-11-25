@@ -25,7 +25,7 @@ function one(v: string | string[] | undefined): string {
 
 export default async function PaymentsPage({ searchParams }: PageProps<"/payments">) {
   const sp = await searchParams;
-  // Only this month and last month are kept; older payments are deleted automatically.
+  // Only the last 3 months (this month included) are kept; older payments are deleted automatically.
   after(() => cleanupOldPayments().catch(() => {}));
   const months = keptMonths();
   const monthParam = one(sp.month) || currentMonth();

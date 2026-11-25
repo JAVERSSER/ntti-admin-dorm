@@ -9,15 +9,15 @@ let lastRun = 0;
 
 /**
  * Auto clean: permanently delete payment submissions (and their screenshots in
- * the "payment-slips" bucket) paid for any month before last month.
- * Only last month and this month are kept.
+ * the "payment-slips" bucket) paid for any month older than the kept months (see KEPT_MONTHS).
+ * Only this month and the 2 months before it are kept.
  */
 export async function cleanupOldPayments({ force = false } = {}): Promise<number> {
   if (!force && Date.now() - lastRun < INTERVAL_MS) return 0;
   lastRun = Date.now();
   let total = 0;
 
-  const oldest = keptMonths().at(-1)!.value; // last month, YYYY-MM
+  const oldest = keptMonths().at(-1)!.value; // oldest kept month, YYYY-MM
   const cutoff = `${oldest}-01`;
   const supabase = createServiceClient();
 

@@ -5,7 +5,7 @@ import { cleanupOldPayments } from "@/lib/cleanup";
 /**
  * Daily job (Vercel Cron, cron-job.org, GitHub Actions…). It:
  *   1. keeps the Supabase free project active, so it is never paused, and
- *   2. deletes payments and screenshots older than last month.
+ *   2. deletes payments and screenshots older than the 3 kept months.
  * Call with header  Authorization: Bearer <CRON_SECRET>.
  */
 export async function GET(request: NextRequest) {

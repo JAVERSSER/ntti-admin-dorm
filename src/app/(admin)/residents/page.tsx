@@ -46,7 +46,7 @@ function one(v: string | string[] | undefined): string {
 
 export default async function ResidentsPage({ searchParams }: PageProps<"/residents">) {
   const sp = await searchParams;
-  // Payments older than last month are deleted automatically, so only these two months are offered.
+  // Payments older than the 3 kept months are deleted automatically, so only those months are offered.
   const months = keptMonths();
   const monthParam = months.some((m) => m.value === one(sp.month)) ? one(sp.month) : currentMonth();
   const range = monthRange(monthParam)!;
