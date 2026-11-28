@@ -44,6 +44,11 @@ export async function cleanupOldPayments({ force = false } = {}): Promise<number
       console.info(`[cleanup] deleted ${data.length} payments before ${oldest}`);
       if (data.length < BATCH) break;
     }
+
+    // Generated QRs (paid ones are already copied to payment_submissions) are not needed after a week.
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const stale = await supabase.from("payway_transactions").delete().lt("created_at", weekAgo);
+    if (stale.error) console.error("[cleanup] payway_transactions", stale.error.message);
   } catch (err) {
     lastRun = 0; // try again on the next page view
     console.error("[cleanup] old payments", err);

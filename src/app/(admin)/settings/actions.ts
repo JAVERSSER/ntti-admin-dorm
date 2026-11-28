@@ -9,51 +9,20 @@ import { dbErrorMessage, formToObject, runAction } from "@/lib/actions";
 import { editAdminSchema, newAdminSchema } from "@/lib/validation";
 import type { ActionResult } from "@/lib/types";
 
-/** Detect the real image type from the first bytes (never trust the browser's MIME type). */
-function sniffImage(b: Uint8Array): { ext: string; mime: string } | null {
-  if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return { ext: "jpg", mime: "image/jpeg" };
-  if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return { ext: "png", mime: "image/png" };
-  if (String.fromCharCode(...b.slice(0, 4)) === "RIFF" && String.fromCharCode(...b.slice(8, 12)) === "WEBP") {
-    return { ext: "webp", mime: "image/webp" };
-  }
-  return null;
-}
-
-/** Replace the ABA QR image shown on the public payment form. */
-export async function uploadPaymentQr(formData: FormData): Promise<ActionResult> {
+/** Set the monthly fee (USD) that every dynamic ABA PayWay KHQR on the payment form asks for. */
+export async function updateMonthlyFee(formData: FormData): Promise<ActionResult> {
   return runAction(async () => {
     const admin = await assertAdmin();
-    const file = formData.get("qr");
-    if (!(file instanceof File) || file.size === 0) return { ok: false, error: "Choose an image.", fieldErrors: { qr: ["Choose an image."] } };
-    if (file.size > 5 * 1024 * 1024) return { ok: false, error: "Image is too large.", fieldErrors: { qr: ["Max 5 MB."] } };
-    const bytes = new Uint8Array(await file.arrayBuffer());
-    const kind = sniffImage(bytes);
-    if (!kind) return { ok: false, error: "Only JPG, PNG or WEBP images.", fieldErrors: { qr: ["Only JPG, PNG or WEBP images."] } };
-
+    const raw = String(formData.get("fee") ?? "").trim().replace(/^\$/, "");
+    const fee = Number(raw);
+    if (!/^\d+(\.\d{1,2})?$/.test(raw) || !(fee >= 0.01 && fee <= 100000)) {
+      return { ok: false, error: "Enter the fee in US dollars, e.g. 45 or 45.50.", fieldErrors: { fee: ["Enter an amount between 0.01 and 100000, at most 2 decimals."] } };
+    }
     const supabase = await createClient();
-    const { data: current } = await supabase.from("app_settings").select("payment_qr_path").eq("id", 1).maybeSingle();
-
-    // Storage writes use the service role: the caller is already verified by
-    // assertAdmin() above, and this avoids depending on storage.objects RLS
-    // policies, which can reject the upload even for a valid admin.
-    const storage = createServiceClient().storage.from("payment-qr");
-
-    // New file name every time so browsers/CDN never show a cached old QR.
-    const path = `qr-${Date.now()}.${kind.ext}`;
-    const up = await storage.upload(path, bytes, { contentType: kind.mime, upsert: false });
-    if (up.error) {
-      console.error("[uploadPaymentQr] storage upload failed", up.error);
-      return { ok: false, error: `Upload failed: ${up.error.message}` };
-    }
-
-    const { error } = await supabase.from("app_settings").update({ payment_qr_path: path, updated_by: admin.id }).eq("id", 1);
-    if (error) {
-      await storage.remove([path]);
-      return { ok: false, error: dbErrorMessage(error) };
-    }
-    if (current?.payment_qr_path && current.payment_qr_path !== path) await storage.remove([current.payment_qr_path]);
+    const { error } = await supabase.from("app_settings").update({ monthly_fee_usd: fee, updated_by: admin.id }).eq("id", 1);
+    if (error) return { ok: false, error: dbErrorMessage(error) };
     revalidatePath("/settings");
-    return { ok: true, message: "QR updated. Residents will see the new QR on the payment form." };
+    return { ok: true, message: `Monthly fee set to $${fee.toFixed(2)}. New payment QRs use this amount.` };
   });
 }
 

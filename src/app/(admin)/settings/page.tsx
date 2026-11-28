@@ -7,7 +7,7 @@ import { Table, THead, TBody, Th, Td, Tr } from "@/components/ui/table";
 import { StatusBadge, Badge } from "@/components/ui/badge";
 import { ErrorNotice } from "@/components/ui/empty-state";
 import { ConfirmAction } from "@/components/ui/confirm-action";
-import { EditAdminButton, NewAdminButton, QrUploadForm } from "./forms";
+import { EditAdminButton, MonthlyFeeForm, NewAdminButton } from "./forms";
 import { deleteAdmin, setAdminActive } from "./actions";
 import type { Admin, AppSettings } from "@/lib/types";
 
@@ -20,30 +20,27 @@ export default async function SettingsPage() {
     supabase.from("admins").select("*").order("created_at"),
   ]);
   const isSuper = me.role === "super_admin";
-  const qrPath = (settings as AppSettings | null)?.payment_qr_path;
-  const qrUrl = qrPath ? supabase.storage.from("payment-qr").getPublicUrl(qrPath).data.publicUrl : null;
+  const fee = (settings as AppSettings | null)?.monthly_fee_usd;
+  const monthlyFee = fee == null ? null : Number(fee);
 
   return (
     <>
-      <PageHeader title="Settings" description="Payment QR and administrator access." />
+      <PageHeader title="Settings" description="Monthly fee and administrator access." />
       {error && <ErrorNotice message={error.message} />}
 
       <Card>
         <CardHeader
-          title="Payment QR"
-          description="The ABA QR residents scan on the payment form."
+          title="Payment"
+          description="Residents pay with a one-time ABA PayWay KHQR for this amount. Payments are confirmed automatically and show as approved."
         />
         <CardBody className="flex flex-col gap-6 sm:flex-row sm:items-start">
-          <div className="flex w-full shrink-0 items-center justify-center rounded-lg bg-slate-50 p-3 sm:w-56">
-            {qrUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element -- image from Supabase Storage
-              <img src={qrUrl} alt="Current payment QR" className="max-h-56 w-auto rounded-md" />
-            ) : (
-              <p className="p-6 text-center text-sm text-slate-500">No QR uploaded yet. The form shows the default QR that ships with the user app.</p>
-            )}
+          <div className="flex w-full shrink-0 flex-col items-center justify-center rounded-lg bg-slate-50 p-6 sm:w-56">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Current fee</p>
+            <p className="mt-1 text-3xl font-bold text-slate-900">{monthlyFee ? `$${monthlyFee.toFixed(2)}` : "Not set"}</p>
+            {!monthlyFee && <p className="mt-2 text-center text-xs text-amber-700">Residents cannot pay until a fee is set.</p>}
           </div>
           <div className="w-full sm:max-w-sm">
-            <QrUploadForm />
+            <MonthlyFeeForm fee={monthlyFee} />
           </div>
         </CardBody>
       </Card>

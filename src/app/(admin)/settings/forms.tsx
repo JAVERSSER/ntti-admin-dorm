@@ -1,59 +1,28 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ImageUp, Pencil, UserPlus } from "lucide-react";
+import { useState } from "react";
+import { Pencil, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { useAction } from "@/components/ui/use-action";
-import { createAdmin, updateAdmin, uploadPaymentQr } from "./actions";
+import { createAdmin, updateAdmin, updateMonthlyFee } from "./actions";
 import type { Admin } from "@/lib/types";
 
-export function QrUploadForm() {
-  const ref = useRef<HTMLFormElement>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const { run, pending, fieldErrors, setFieldErrors } = useAction(uploadPaymentQr, {
-    onSuccess: () => {
-      ref.current?.reset();
-      setFileName(null);
-    },
-  });
+export function MonthlyFeeForm({ fee }: { fee: number | null }) {
+  const { run, pending, fieldErrors } = useAction(updateMonthlyFee);
   return (
     <form
-      ref={ref}
       className="space-y-3"
       onSubmit={(e) => {
         e.preventDefault();
-        const fd = new FormData(e.currentTarget);
-        const file = fd.get("qr");
-        if (file instanceof File && file.size > 5 * 1024 * 1024) {
-          setFieldErrors({ qr: ["Max 5 MB. Please choose a smaller image."] });
-          return;
-        }
-        run(fd);
+        run(new FormData(e.currentTarget));
       }}
     >
-      <Field label="New QR image" htmlFor="qr-file" error={fieldErrors.qr} hint="JPG, PNG or WEBP, up to 5 MB">
-        <label
-          htmlFor="qr-file"
-          className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50"
-        >
-          <ImageUp className="h-4 w-4 text-blue-600" />
-          <span className="truncate">{fileName ?? "Choose image…"}</span>
-        </label>
-        <input
-          id="qr-file"
-          name="qr"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="sr-only"
-          onChange={(e) => {
-            setFileName(e.target.files?.[0]?.name ?? null);
-            setFieldErrors({});
-          }}
-        />
+      <Field label="Monthly fee (USD)" htmlFor="fee" error={fieldErrors.fee} hint="Each resident's QR asks for exactly this amount.">
+        <Input id="fee" name="fee" type="number" inputMode="decimal" min="0.01" step="0.01" defaultValue={fee ?? ""} placeholder="e.g. 45.00" required />
       </Field>
-      <Button type="submit" loading={pending} disabled={!fileName}>Upload QR</Button>
+      <Button type="submit" loading={pending}>Save fee</Button>
     </form>
   );
 }

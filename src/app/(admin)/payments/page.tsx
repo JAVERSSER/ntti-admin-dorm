@@ -45,14 +45,15 @@ export default async function PaymentsPage({ searchParams }: PageProps<"/payment
 
   // Short-lived links so private screenshots can be shown in the browser.
   const urls = new Map<string, string>();
-  if (data.length) {
-    const { data: signed } = await supabase.storage.from("payment-slips").createSignedUrls(data.map((r) => r.slip_path), 60 * 60);
+  const slipPaths = data.map((r) => r.slip_path).filter((p): p is string => Boolean(p));
+  if (slipPaths.length) {
+    const { data: signed } = await supabase.storage.from("payment-slips").createSignedUrls(slipPaths, 60 * 60);
     for (const s of signed ?? []) if (s.path && s.signedUrl) urls.set(s.path, s.signedUrl);
   }
 
   const rows: BoardRow[] = data.map((r) => ({
     ...r,
-    imageUrl: urls.get(r.slip_path) ?? null,
+    imageUrl: r.slip_path ? (urls.get(r.slip_path) ?? null) : null,
     forMonthLabel: formatMonth(r.for_month),
     submittedAt: formatDateTime(r.created_at),
     reviewedAtLabel: r.reviewed_at ? formatDateTime(r.reviewed_at) : null,

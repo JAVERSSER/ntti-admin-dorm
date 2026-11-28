@@ -15,6 +15,8 @@ export interface AppSettings {
   id: number;
   dormitory_name: string;
   payment_qr_path: string | null;
+  /** Amount (USD) every dynamic PayWay KHQR asks for. */
+  monthly_fee_usd: number | string | null;
   updated_at: string;
 }
 
@@ -49,7 +51,13 @@ export interface PaymentSubmission {
   student_name: string;
   grade: string;
   institution: string;
-  slip_path: string;
+  /** Screenshot in "payment-slips"; null for payments confirmed by ABA PayWay. */
+  slip_path: string | null;
+  amount: number | string | null;
+  currency: string | null;
+  payway_tran_id: string | null;
+  payway_apv: string | null;
+  paid_at: string | null;
   /** First day of the month this payment is for (YYYY-MM-01). */
   for_month: string;
   status: SubmissionStatus;

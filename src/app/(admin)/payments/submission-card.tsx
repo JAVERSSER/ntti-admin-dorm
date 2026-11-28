@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ExternalLink, ImageOff, RotateCcw, X } from "lucide-react";
+import { BadgeCheck, Check, ExternalLink, ImageOff, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
 import { Field, Textarea } from "@/components/ui/field";
@@ -23,6 +23,7 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
   const [note, setNote] = useState(s.admin_note ?? "");
   const [target, setTarget] = useState<SubmissionStatus | null>(null);
   const { run, pending } = useAction(reviewSubmission, { onSuccess: () => setOpen(false) });
+  const amount = s.amount != null ? `${Number(s.amount).toFixed(2)} ${s.currency ?? "USD"}` : null;
 
   function review(status: SubmissionStatus) {
     setTarget(status);
@@ -40,6 +41,8 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- short-lived signed URL from Supabase Storage
             <img src={imageUrl} alt={`Payment screenshot from ${s.student_name}`} loading="lazy" className="h-full w-full object-cover object-top transition group-hover:scale-[1.02]" />
+          ) : s.payway_tran_id ? (
+            <PaywayBadge amount={amount} />
           ) : (
             <div className="flex h-full items-center justify-center text-slate-400"><ImageOff className="h-8 w-8" /></div>
           )}
@@ -95,6 +98,10 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
                   Open full size <ExternalLink className="h-3 w-3" />
                 </a>
               </>
+            ) : s.payway_tran_id ? (
+              <div className="aspect-[3/4] w-full max-w-xs overflow-hidden rounded-lg border border-slate-200">
+                <PaywayBadge amount={amount} />
+              </div>
             ) : (
               <p className="text-sm text-slate-500">Image not available.</p>
             )}
@@ -104,6 +111,9 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
               {[
                 ["Status", <StatusBadge key="s" status={s.status} />],
                 ["Paying for", forMonth],
+                ...(amount ? [["Amount", amount]] : []),
+                ...(s.payway_tran_id ? [["PayWay transaction", <span key="tx" className="font-mono text-xs">{s.payway_tran_id}</span>]] : []),
+                ...(s.payway_apv ? [["APV", <span key="apv" className="font-mono text-xs">{s.payway_apv}</span>]] : []),
                 ["Student name", s.student_name],
                 ["Room", s.room],
                 ["Grade", s.grade],
@@ -124,5 +134,17 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
         </div>
       </Modal>
     </>
+  );
+}
+
+/** Shown instead of a screenshot for payments confirmed by ABA PayWay. */
+function PaywayBadge({ amount }: { amount: string | null }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2 bg-emerald-50 p-4 text-center text-emerald-800">
+      <BadgeCheck className="h-10 w-10" />
+      <p className="text-sm font-semibold">Paid with ABA KHQR</p>
+      {amount && <p className="text-lg font-bold">{amount}</p>}
+      <p className="text-[11px] text-emerald-700">Confirmed by ABA PayWay</p>
+    </div>
   );
 }
