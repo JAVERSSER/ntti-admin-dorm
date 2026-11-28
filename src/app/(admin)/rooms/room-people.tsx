@@ -4,9 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
-import type { PayState } from "@/lib/match";
 
 export interface RoomPerson {
   id: string;
@@ -16,19 +14,10 @@ export interface RoomPerson {
   grade: string | null;
   institution: string | null;
   note: string | null;
-  state: PayState;
 }
 
-const STATE: Record<PayState, { label: string; tone: "green" | "yellow" | "red" | "gray" }> = {
-  paid: { label: "Paid", tone: "green" },
-  pending: { label: "Waiting review", tone: "yellow" },
-  rejected: { label: "Rejected", tone: "red" },
-  unpaid: { label: "Not paid", tone: "gray" },
-};
-
-export function RoomPeopleButton({ room, people, monthLabel }: { room: string; people: RoomPerson[]; monthLabel: string }) {
+export function RoomPeopleButton({ room, people }: { room: string; people: RoomPerson[] }) {
   const [open, setOpen] = useState(false);
-  const paid = people.filter((p) => p.state === "paid").length;
 
   return (
     <>
@@ -40,7 +29,7 @@ export function RoomPeopleButton({ room, people, monthLabel }: { room: string; p
         open={open}
         onClose={() => setOpen(false)}
         title={`Room ${room}`}
-        description={`${people.length} living here · ${paid} paid for ${monthLabel}`}
+        description={`${people.length} living here`}
         size="lg"
         footer={
           <>
@@ -56,7 +45,6 @@ export function RoomPeopleButton({ room, people, monthLabel }: { room: string; p
       >
         <ul className="divide-y divide-slate-100">
           {people.map((p, i) => {
-            const st = STATE[p.state];
             const detail = [p.degree, p.major, p.grade].filter(Boolean).join(" · ");
             return (
               <li key={p.id} className="flex items-start justify-between gap-3 py-3 first:pt-0 last:pb-0">
@@ -70,7 +58,6 @@ export function RoomPeopleButton({ room, people, monthLabel }: { room: string; p
                     {p.note && <div className="text-xs italic text-slate-400">{p.note}</div>}
                   </div>
                 </div>
-                <Badge tone={st.tone}>{st.label}</Badge>
               </li>
             );
           })}

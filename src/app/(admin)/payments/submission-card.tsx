@@ -1,14 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { BadgeCheck, Check, ExternalLink, ImageOff, RotateCcw, X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { BadgeCheck, ExternalLink, ImageOff } from "lucide-react";
 import { StatusBadge } from "@/components/ui/badge";
-import { Field, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { useAction } from "@/components/ui/use-action";
-import { reviewSubmission } from "./actions";
-import type { PaymentSubmission, SubmissionStatus } from "@/lib/types";
+import type { PaymentSubmission } from "@/lib/types";
 
 type Props = {
   submission: PaymentSubmission;
@@ -20,15 +16,7 @@ type Props = {
 
 export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt, reviewedAt }: Props) {
   const [open, setOpen] = useState(false);
-  const [note, setNote] = useState(s.admin_note ?? "");
-  const [target, setTarget] = useState<SubmissionStatus | null>(null);
-  const { run, pending } = useAction(reviewSubmission, { onSuccess: () => setOpen(false) });
   const amount = s.amount != null ? `${Number(s.amount).toFixed(2)} ${s.currency ?? "USD"}` : null;
-
-  function review(status: SubmissionStatus) {
-    setTarget(status);
-    run(s.id, status, note);
-  }
 
   return (
     <>
@@ -63,30 +51,6 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
         size="xl"
         title={`${s.student_name} — Room ${s.room}`}
         description={<>Reference <span className="font-mono font-semibold text-slate-700">{s.reference}</span></>}
-        footer={
-          <>
-            {s.status !== "pending" && (
-              <Button
-                variant="ghost"
-                onClick={() => review("pending")}
-                loading={pending && target === "pending"}
-                disabled={pending}
-                aria-label="Back to pending"
-                title="Back to pending"
-              >
-                {!(pending && target === "pending") && <RotateCcw className="h-4 w-4" />}
-                {/* Phones show the icon only; wider screens show the words too. */}
-                <span className="hidden sm:inline">Back to pending</span>
-              </Button>
-            )}
-            <Button variant="danger" onClick={() => review("rejected")} loading={pending && target === "rejected"} disabled={pending}>
-              <X className="h-4 w-4" /> Reject
-            </Button>
-            <Button variant="success" onClick={() => review("approved")} loading={pending && target === "approved"} disabled={pending}>
-              <Check className="h-4 w-4" /> Approve
-            </Button>
-          </>
-        }
       >
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <div className="flex flex-col items-center gap-2">
@@ -127,9 +91,12 @@ export function SubmissionCard({ submission: s, imageUrl, forMonth, submittedAt,
                 </div>
               ))}
             </dl>
-            <Field className="rounded-lg bg-slate-50 p-3" label="Note (optional)" htmlFor={`note-${s.id}`} hint="e.g. amount received, or why it was rejected">
-              <Textarea id={`note-${s.id}`} rows={3} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} />
-            </Field>
+            {s.admin_note && (
+              <div className="rounded-lg bg-slate-50 p-3 text-sm">
+                <p className="font-medium text-slate-700">Note</p>
+                <p className="mt-1 whitespace-pre-wrap text-slate-600">{s.admin_note}</p>
+              </div>
+            )}
           </div>
         </div>
       </Modal>

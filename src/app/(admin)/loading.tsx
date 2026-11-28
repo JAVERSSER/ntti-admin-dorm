@@ -1,13 +1,13 @@
+// Fallback for any admin page without its own loading.tsx: header + a card with a table.
+import { SkeletonCard, SkeletonHeader, SkeletonPage, SkeletonTable } from "@/components/ui/skeleton";
+
 export default function Loading() {
   return (
-    <div className="animate-pulse space-y-6" aria-busy="true" aria-label="Loading">
-      <div className="h-8 w-56 rounded-lg bg-slate-200" />
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-24 rounded-xl bg-slate-200/70" />
-        ))}
-      </div>
-      <div className="h-80 rounded-xl bg-slate-200/70" />
-    </div>
+    <SkeletonPage>
+      <SkeletonHeader />
+      <SkeletonCard>
+        <SkeletonTable cols={["w-20", "w-40", "w-16", "w-24"]} />
+      </SkeletonCard>
+    </SkeletonPage>
   );
 }

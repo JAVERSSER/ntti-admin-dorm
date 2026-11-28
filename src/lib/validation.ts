@@ -41,8 +41,11 @@ export const reviewSchema = z.object({
 });
 
 const usernameField = z.preprocess(
-  (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
-  z.string().min(1, "Enter a username"),
+  (v) => (typeof v === "string" ? v.trim() : v),
+  z
+    .string()
+    .min(1, "Enter a username")
+    .regex(/^[A-Za-z0-9._-]{3,32}$/, "3–32 characters: letters, numbers, . _ -"),
 );
 
 export const newAdminSchema = z.object({

@@ -109,7 +109,7 @@ export async function updateAdmin(id: string, formData: FormData): Promise<Actio
     }
 
     // Profile row through the caller's session so RLS and the audit trigger apply.
-    const { error } = await supabase.from("admins").update({ username: input.username, email, role }).eq("id", adminId);
+    const { error } = await supabase.from("admins").update({ username: input.username, full_name: input.username, email, role }).eq("id", adminId);
     if (error) {
       if (emailChanged) await service.auth.admin.updateUserById(adminId, { email: current.email, email_confirm: true });
       return { ok: false, error: dbErrorMessage(error) };

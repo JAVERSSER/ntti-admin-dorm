@@ -2,14 +2,14 @@
 
 import { useMemo, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, UserX, Users } from "lucide-react";
+import { CheckCircle2, UserX, Users } from "lucide-react";
 import { formatNumber } from "@/lib/format";
 import { nameKey, type PayState } from "@/lib/match";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
 import { StatCard } from "@/components/ui/stat-card";
 import { Badge } from "@/components/ui/badge";
-import { Table, THead, TBody, Th, Td, Tr } from "@/components/ui/table";
+import { SortableTable } from "@/components/ui/sortable-table";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ConfirmAction } from "@/components/ui/confirm-action";
 import { ResidentFormButton } from "./resident-form";
@@ -23,13 +23,13 @@ const STATES: Record<PayState, { label: string; tone: "green" | "yellow" | "red"
   unpaid: { label: "Not paid", tone: "gray" },
 };
 
-/** Payment filter values: the four states plus "notpaid" (no payment or rejected), used by the "Not paid" card. */
+/** Sort order for the payment column: paid first, then waiting, rejected, not paid. */
+const STATE_ORDER: Record<PayState, number> = { paid: 0, pending: 1, rejected: 2, unpaid: 3 };
+
+/** Payment filter values, also used by the stat cards: "notpaid" = no payment or rejected. */
 const PAY_FILTERS = [
   { value: "paid", label: "Paid" },
-  { value: "pending", label: "Waiting review" },
-  { value: "notpaid", label: "Not paid (all)" },
-  { value: "unpaid", label: "No submission" },
-  { value: "rejected", label: "Rejected" },
+  { value: "notpaid", label: "Not paid" },
 ] as const;
 type PayFilter = (typeof PAY_FILTERS)[number]["value"] | "";
 
@@ -113,10 +113,9 @@ export function ResidentsBoard({
   const onList = !showMoved;
   return (
     <>
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard label="Residents" value={formatNumber(active.length)} icon={<Users className="h-5 w-5" />} accent="blue" hint={periodLabel} onClick={() => choosePay("")} selected={onList && !pay} />
         <StatCard label="Paid" value={formatNumber(counts.paid)} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" onClick={() => choosePay("paid")} selected={onList && pay === "paid"} />
-        <StatCard label="Waiting review" value={formatNumber(counts.pending)} icon={<Clock className="h-5 w-5" />} accent="amber" onClick={() => choosePay("pending")} selected={onList && pay === "pending"} />
         <StatCard
           label="Not paid"
           value={formatNumber(counts.unpaid + counts.rejected)}
@@ -148,71 +147,65 @@ export function ResidentsBoard({
         {visible.length === 0 ? (
           <EmptyState title="No residents found" description="Try another filter, or add residents." />
         ) : (
-          <Table>
-            <THead>
-              <tr>
-                <Th>Room</Th>
-                <Th>Name</Th>
-                <Th>Degree / Major / Grade</Th>
-                <Th>School</Th>
-                <Th>{periodLabel}</Th>
-                <Th className="text-right">Actions</Th>
-              </tr>
-            </THead>
-            <TBody>
-              {visible.map((r) => {
-                const st = r.state ? STATES[r.state] : null;
-                return (
-                  <Tr key={r.id}>
-                    <Td className="font-semibold text-slate-900">{r.room}</Td>
-                    <Td>
-                      <div className="font-medium text-slate-900">{r.full_name}</div>
-                      {r.note && <div className="text-xs text-slate-500">{r.note}</div>}
-                    </Td>
-                    <Td>
-                      <div>{r.major ?? "—"}</div>
-                      <div className="text-xs text-slate-500">{[r.degree, r.grade].filter(Boolean).join(" · ")}</div>
-                    </Td>
-                    <Td>{r.institution ?? "—"}</Td>
-                    <Td>
-                      {r.is_active && st ? (
-                        <div>
-                          <Badge tone={st.tone}>{st.label}</Badge>
-                          {r.submittedAt && (
-                            <div className="mt-0.5 text-xs text-slate-500">
-                              {r.submittedAt}
-                              {r.sentAsRoom && ` · sent as room ${r.sentAsRoom}`}
-                            </div>
-                          )}
+          <SortableTable
+            columns={[
+              { label: "Room", sortable: true, cellClassName: "font-semibold text-slate-900" },
+              { label: "Name", sortable: true },
+              { label: "Degree / Major / Grade", sortable: true },
+              { label: "School", sortable: true },
+              { label: periodLabel, sortable: true },
+              { label: "Actions", className: "text-right" },
+            ]}
+            rows={visible.map((r) => {
+              const st = r.state ? STATES[r.state] : null;
+              return {
+                key: r.id,
+                values: [r.room, r.full_name, r.major ?? [r.degree, r.grade].filter(Boolean).join(" "), r.institution, r.is_active && r.state ? STATE_ORDER[r.state] : 9],
+                cells: [
+                  r.room,
+                  <>
+                    <div className="font-medium text-slate-900">{r.full_name}</div>
+                    {r.note && <div className="text-xs text-slate-500">{r.note}</div>}
+                  </>,
+                  <>
+                    <div>{r.major ?? "—"}</div>
+                    <div className="text-xs text-slate-500">{[r.degree, r.grade].filter(Boolean).join(" · ")}</div>
+                  </>,
+                  r.institution ?? "—",
+                  r.is_active && st ? (
+                    <div>
+                      <Badge tone={st.tone}>{st.label}</Badge>
+                      {r.submittedAt && (
+                        <div className="mt-0.5 text-xs text-slate-500">
+                          {r.submittedAt}
+                          {r.sentAsRoom && ` · sent as room ${r.sentAsRoom}`}
                         </div>
-                      ) : (
-                        <Badge>Moved out</Badge>
                       )}
-                    </Td>
-                    <Td className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <ResidentFormButton resident={r} rooms={rooms} schools={schools} grades={grades} degrees={degrees} />
-                        <ConfirmAction
-                          action={setResidentActive.bind(null, r.id, !r.is_active)}
-                          title={r.is_active ? `Mark ${r.full_name} as moved out?` : `Move ${r.full_name} back in?`}
-                          description={
-                            r.is_active
-                              ? "They will no longer be counted as unpaid. Past payments are kept."
-                              : "They will be counted in the monthly paid / not paid list again."
-                          }
-                          confirmLabel={r.is_active ? "Moved out" : "Move back in"}
-                          confirmVariant={r.is_active ? "danger" : "primary"}
-                          variant="ghost"
-                        >
-                          {r.is_active ? "Moved out" : "Move in"}
-                        </ConfirmAction>
-                      </div>
-                    </Td>
-                  </Tr>
-                );
-              })}
-            </TBody>
-          </Table>
+                    </div>
+                  ) : (
+                    <Badge>Moved out</Badge>
+                  ),
+                  <div key="a" className="flex justify-end gap-1">
+                    <ResidentFormButton resident={r} rooms={rooms} schools={schools} grades={grades} degrees={degrees} />
+                    <ConfirmAction
+                      action={setResidentActive.bind(null, r.id, !r.is_active)}
+                      title={r.is_active ? `Mark ${r.full_name} as moved out?` : `Move ${r.full_name} back in?`}
+                      description={
+                        r.is_active
+                          ? "They will no longer be counted as unpaid. Past payments are kept."
+                          : "They will be counted in the monthly paid / not paid list again."
+                      }
+                      confirmLabel={r.is_active ? "Moved out" : "Move back in"}
+                      confirmVariant={r.is_active ? "danger" : "primary"}
+                      variant="ghost"
+                    >
+                      {r.is_active ? "Moved out" : "Move in"}
+                    </ConfirmAction>
+                  </div>,
+                ],
+              };
+            })}
+          />
         )}
       </Card>
     </>

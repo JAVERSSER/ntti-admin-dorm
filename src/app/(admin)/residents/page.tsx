@@ -91,7 +91,7 @@ export default async function ResidentsPage({ searchParams }: PageProps<"/reside
                 {unmatched.map((s) => (
                   <li key={s.id}>
                     <Link
-                      href={`/payments?status=all&month=${monthParam}&q=${encodeURIComponent(s.student_name)}`}
+                      href={`/payments?${s.status === "approved" ? "" : "status=notpaid&"}month=${monthParam}&q=${encodeURIComponent(s.student_name)}`}
                       className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-2.5 py-1 text-xs hover:bg-slate-50"
                     >
                       <span className="font-medium text-slate-900">{s.student_name}</span>

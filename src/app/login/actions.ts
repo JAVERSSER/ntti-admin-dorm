@@ -21,7 +21,9 @@ const USERNAME_DOMAIN = "dormpay.local";
  */
 async function findAdmin(login: string): Promise<{ id: string; email: string; is_active: boolean } | null> {
   const query = createServiceClient().from("admins").select("id, email, is_active");
-  const { data } = await (login.includes("@") ? query.eq("email", login) : query.eq("username", login)).maybeSingle();
+  // Usernames keep their capitals (e.g. "Admin") but sign-in ignores case; escape ilike wildcards.
+  const username = login.replace(/[\\%_]/g, (c) => `\\${c}`);
+  const { data } = await (login.includes("@") ? query.eq("email", login) : query.ilike("username", username)).maybeSingle();
   return data;
 }
 

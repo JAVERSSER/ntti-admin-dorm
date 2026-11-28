@@ -2,17 +2,18 @@
 
 import { useMemo, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CheckCircle2, ChevronLeft, ChevronRight, Clock, Receipt, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/components/ui/cn";
 import { SubmissionCard } from "./submission-card";
-import type { PaymentSubmission, SubmissionStatus } from "@/lib/types";
+import type { PaymentSubmission } from "@/lib/types";
 
 const PAGE_SIZE = 24;
-const STATUSES: SubmissionStatus[] = ["pending", "approved", "rejected"];
-type Tab = SubmissionStatus | "all";
+/** Paid = approved (every ABA PayWay payment). Not paid = pending or rejected screenshot uploads. */
+type Tab = "paid" | "notpaid";
+const isPaid = (r: PaymentSubmission) => r.status === "approved";
 
 export type BoardRow = PaymentSubmission & {
   imageUrl: string | null;
@@ -22,7 +23,7 @@ export type BoardRow = PaymentSubmission & {
 };
 
 /**
- * Status tabs and paging run in the browser: the server sends every payment that
+ * Paid / Not paid tabs and paging run in the browser: the server sends every payment that
  * matches the month / room / search once, so switching tabs needs no page load.
  */
 export function PaymentsBoard({
@@ -40,15 +41,11 @@ export function PaymentsBoard({
   const params = useSearchParams();
   const pathname = usePathname();
   const statusParam = params.get("status") ?? "";
-  const tab: Tab = statusParam === "all" || STATUSES.includes(statusParam as SubmissionStatus) ? (statusParam as Tab) : "pending";
+  const tab: Tab = statusParam === "notpaid" ? "notpaid" : "paid";
   const pageParam = Number(params.get("page"));
 
-  const counts = useMemo(() => {
-    const c = { pending: 0, approved: 0, rejected: 0 };
-    for (const r of rows) c[r.status] += 1;
-    return c;
-  }, [rows]);
-  const visible = useMemo(() => (tab === "all" ? rows : rows.filter((r) => r.status === tab)), [rows, tab]);
+  const paidCount = useMemo(() => rows.filter(isPaid).length, [rows]);
+  const visible = useMemo(() => rows.filter((r) => isPaid(r) === (tab === "paid")), [rows, tab]);
 
   const pages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
   const page = Number.isInteger(pageParam) && pageParam > 0 ? Math.min(pageParam, pages) : 1;
@@ -58,7 +55,7 @@ export function PaymentsBoard({
   function go(next: { status?: Tab; page?: number }) {
     const sp = new URLSearchParams(params.toString());
     if (next.status !== undefined) {
-      if (next.status === "pending") sp.delete("status");
+      if (next.status === "paid") sp.delete("status");
       else sp.set("status", next.status);
       sp.delete("page");
     }
@@ -75,19 +72,17 @@ export function PaymentsBoard({
 
   return (
     <>
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Pending review" value={counts.pending} icon={<Clock className="h-5 w-5" />} accent="amber" onClick={() => go({ status: "pending" })} selected={tab === "pending"} hint="Needs your check" />
-        <StatCard label="Approved" value={counts.approved} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" onClick={() => go({ status: "approved" })} selected={tab === "approved"} />
-        <StatCard label="Rejected" value={counts.rejected} icon={<XCircle className="h-5 w-5" />} accent="red" onClick={() => go({ status: "rejected" })} selected={tab === "rejected"} />
-        <StatCard label="All submitted" value={rows.length} icon={<Receipt className="h-5 w-5" />} accent="blue" hint={periodLabel} onClick={() => go({ status: "all" })} selected={tab === "all"} />
+      <div className="mb-6 grid grid-cols-2 gap-3">
+        <StatCard label="Paid" value={paidCount} icon={<CheckCircle2 className="h-5 w-5" />} accent="green" hint={periodLabel} onClick={() => go({ status: "paid" })} selected={tab === "paid"} />
+        <StatCard label="Not paid" value={rows.length - paidCount} icon={<XCircle className="h-5 w-5" />} accent="red" hint={periodLabel} onClick={() => go({ status: "notpaid" })} selected={tab === "notpaid"} />
       </div>
 
       <Card>
         {toolbar}
 
         {shown.length === 0 ? (
-          tab === "pending" && !filtered ? (
-            <EmptyState title="All caught up" description={`No payments are waiting for review in ${periodLabel}.`} />
+          !filtered ? (
+            <EmptyState title={tab === "paid" ? "No payments yet" : "Nothing here"} description={tab === "paid" ? `No one has paid for ${periodLabel} yet.` : `Every payment for ${periodLabel} is paid.`} />
           ) : (
             <EmptyState title="No payments found" description="Try another tab or month, or clear the filters." />
           )

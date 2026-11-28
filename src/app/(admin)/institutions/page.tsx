@@ -3,7 +3,7 @@ import { sanitizeSearch, formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card } from "@/components/ui/card";
 import { FilterBar } from "@/components/ui/filter-bar";
-import { Table, THead, TBody, Th, Td, Tr } from "@/components/ui/table";
+import { SortableTable } from "@/components/ui/sortable-table";
 import { StatusBadge } from "@/components/ui/badge";
 import { EmptyState, ErrorNotice } from "@/components/ui/empty-state";
 import { ConfirmAction } from "@/components/ui/confirm-action";
@@ -42,46 +42,42 @@ export default async function InstitutionsPage({ searchParams }: PageProps<"/ins
         {rows.length === 0 ? (
           <EmptyState title="No schools found" description="Add a school or adjust your search." />
         ) : (
-          <Table>
-            <THead>
-              <tr>
-                <Th>Code</Th>
-                <Th>Name</Th>
-                <Th>Status</Th>
-                <Th>Created</Th>
-                <Th className="text-right">Actions</Th>
-              </tr>
-            </THead>
-            <TBody>
-              {rows.map((inst) => (
-                <Tr key={inst.id}>
-                  <Td className="font-mono font-semibold text-slate-900">{inst.code}</Td>
-                  <Td className="whitespace-normal">{inst.name}</Td>
-                  <Td><StatusBadge status={inst.is_active ? "active" : "inactive"} /></Td>
-                  <Td>{formatDate(inst.created_at)}</Td>
-                  <Td className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <InstitutionFormButton institution={inst} />
-                      <ConfirmAction
-                        action={setInstitutionActive.bind(null, inst.id, !inst.is_active)}
-                        title={inst.is_active ? `Deactivate ${inst.code}?` : `Activate ${inst.code}?`}
-                        description={
-                          inst.is_active
-                            ? "Past payments keep this school name, but it will no longer appear on the payment form."
-                            : "The school will appear on the payment form again."
-                        }
-                        confirmLabel={inst.is_active ? "Deactivate" : "Activate"}
-                        confirmVariant={inst.is_active ? "danger" : "primary"}
-                        variant="ghost"
-                      >
-                        {inst.is_active ? "Deactivate" : "Activate"}
-                      </ConfirmAction>
-                    </div>
-                  </Td>
-                </Tr>
-              ))}
-            </TBody>
-          </Table>
+          <SortableTable
+            columns={[
+              { label: "Code", sortable: true, cellClassName: "font-mono font-semibold text-slate-900" },
+              { label: "Name", sortable: true, cellClassName: "whitespace-normal" },
+              { label: "Status", sortable: true },
+              { label: "Created", sortable: true },
+              { label: "Actions", className: "text-right" },
+            ]}
+            rows={rows.map((inst) => ({
+              key: inst.id,
+              values: [inst.code, inst.name, inst.is_active, inst.created_at],
+              cells: [
+                inst.code,
+                inst.name,
+                <StatusBadge key="s" status={inst.is_active ? "active" : "inactive"} />,
+                formatDate(inst.created_at),
+                <div key="a" className="flex justify-end gap-1">
+                  <InstitutionFormButton institution={inst} />
+                  <ConfirmAction
+                    action={setInstitutionActive.bind(null, inst.id, !inst.is_active)}
+                    title={inst.is_active ? `Deactivate ${inst.code}?` : `Activate ${inst.code}?`}
+                    description={
+                      inst.is_active
+                        ? "Past payments keep this school name, but it will no longer appear on the payment form."
+                        : "The school will appear on the payment form again."
+                    }
+                    confirmLabel={inst.is_active ? "Deactivate" : "Activate"}
+                    confirmVariant={inst.is_active ? "danger" : "primary"}
+                    variant="ghost"
+                  >
+                    {inst.is_active ? "Deactivate" : "Activate"}
+                  </ConfirmAction>
+                </div>,
+              ],
+            }))}
+          />
         )}
       </Card>
     </>

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
 import { PageHeader } from "@/components/ui/page-header";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Table, THead, TBody, Th, Td, Tr } from "@/components/ui/table";
+import { SortableTable } from "@/components/ui/sortable-table";
 import { StatusBadge, Badge } from "@/components/ui/badge";
 import { ErrorNotice } from "@/components/ui/empty-state";
 import { ConfirmAction } from "@/components/ui/confirm-action";
@@ -51,53 +51,59 @@ export default async function SettingsPage() {
           description={isSuper ? "Only administrators can sign in." : "Only super administrators can manage this list."}
           actions={isSuper && <NewAdminButton />}
         />
-        <Table>
-          <THead>
-            <tr><Th>Username</Th><Th>Email</Th><Th>Password</Th><Th>Role</Th><Th>Status</Th><Th>Since</Th>{isSuper && <Th className="text-right">Actions</Th>}</tr>
-          </THead>
-          <TBody>
-            {((admins ?? []) as Admin[]).map((a) => (
-              <Tr key={a.id}>
-                <Td className="font-medium text-slate-900">{a.username ?? "—"}{a.id === me.id && <span className="ml-2 text-xs text-slate-400">(you)</span>}</Td>
-                <Td>{a.email}</Td>
-                <Td><span className="font-mono tracking-widest text-slate-400" title="Passwords are stored encrypted and cannot be shown. Use Edit to set a new one.">••••••••</span></Td>
-                <Td>{a.role === "super_admin" ? <Badge tone="purple">Super admin</Badge> : <Badge tone="blue">Admin</Badge>}</Td>
-                <Td><StatusBadge status={a.is_active ? "active" : "inactive"} /></Td>
-                <Td>{formatDateTime(a.created_at)}</Td>
-                {isSuper && (
-                  <Td className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                    <EditAdminButton admin={a} isSelf={a.id === me.id} />
-                    {a.id !== me.id && (
-                      <ConfirmAction
-                        action={setAdminActive.bind(null, a.id, !a.is_active)}
-                        title={a.is_active ? `Deactivate ${a.username}?` : `Activate ${a.username}?`}
-                        confirmLabel={a.is_active ? "Deactivate" : "Activate"}
-                        confirmVariant={a.is_active ? "danger" : "primary"}
-                        variant="ghost"
-                      >
-                        {a.is_active ? "Deactivate" : "Activate"}
-                      </ConfirmAction>
-                    )}
-                    {a.id !== me.id && (
-                      <ConfirmAction
-                        action={deleteAdmin.bind(null, a.id)}
-                        title={`Remove ${a.username}?`}
-                        description="This permanently deletes their account and sign-in. Payments they reviewed stay, but no longer show who reviewed them. To block sign-in temporarily, use Deactivate instead."
-                        confirmLabel="Remove"
-                        confirmVariant="danger"
-                        variant="ghost"
-                      >
-                        <span className="text-red-600">Remove</span>
-                      </ConfirmAction>
-                    )}
-                    </div>
-                  </Td>
-                )}
-              </Tr>
-            ))}
-          </TBody>
-        </Table>
+        <SortableTable
+          columns={[
+            { label: "Username", sortable: true, cellClassName: "font-medium text-slate-900" },
+            { label: "Email", sortable: true },
+            { label: "Password" },
+            { label: "Role", sortable: true },
+            { label: "Status", sortable: true },
+            { label: "Since", sortable: true },
+            ...(isSuper ? [{ label: "Actions", className: "text-right" }] : []),
+          ]}
+          rows={((admins ?? []) as Admin[]).map((a) => ({
+            key: a.id,
+            values: [a.username, a.email, null, a.role === "super_admin" ? 0 : 1, a.is_active, a.created_at],
+            cells: [
+              <>{a.username ?? "—"}{a.id === me.id && <span className="ml-2 text-xs text-slate-400">(you)</span>}</>,
+              a.email,
+              <span key="p" className="font-mono tracking-widest text-slate-400" title="Passwords are stored encrypted and cannot be shown. Use Edit to set a new one.">••••••••</span>,
+              a.role === "super_admin" ? <Badge key="r" tone="purple">Super admin</Badge> : <Badge key="r" tone="blue">Admin</Badge>,
+              <StatusBadge key="s" status={a.is_active ? "active" : "inactive"} />,
+              formatDateTime(a.created_at),
+              ...(isSuper
+                ? [
+                    <div key="a" className="flex items-center justify-end gap-1">
+                      <EditAdminButton admin={a} isSelf={a.id === me.id} />
+                      {a.id !== me.id && (
+                        <ConfirmAction
+                          action={setAdminActive.bind(null, a.id, !a.is_active)}
+                          title={a.is_active ? `Deactivate ${a.username}?` : `Activate ${a.username}?`}
+                          confirmLabel={a.is_active ? "Deactivate" : "Activate"}
+                          confirmVariant={a.is_active ? "danger" : "primary"}
+                          variant="ghost"
+                        >
+                          {a.is_active ? "Deactivate" : "Activate"}
+                        </ConfirmAction>
+                      )}
+                      {a.id !== me.id && (
+                        <ConfirmAction
+                          action={deleteAdmin.bind(null, a.id)}
+                          title={`Remove ${a.username}?`}
+                          description="This permanently deletes their account and sign-in. Payments they reviewed stay, but no longer show who reviewed them. To block sign-in temporarily, use Deactivate instead."
+                          confirmLabel="Remove"
+                          confirmVariant="danger"
+                          variant="ghost"
+                        >
+                          <span className="text-red-600">Remove</span>
+                        </ConfirmAction>
+                      )}
+                    </div>,
+                  ]
+                : []),
+            ],
+          }))}
+        />
       </Card>
     </>
   );
